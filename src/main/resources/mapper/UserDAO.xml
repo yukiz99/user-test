@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhu.user.dao.UserDAO">
+    <!--备案申请药店信息字段-->
+    <sql id="user">
+       #{id},
+       #{username},
+       #{password},
+       #{sex},
+       #{bir},
+       #{tel},
+       #{addr},
+       #{createTime}
+    </sql>
+
+    <!-- 查询所有-->
+    <select id="getUserList"  resultType="User" parameterType="User">
+        select
+          <include refid="user"/>
+        from user
+        <where>
+            <if test="username!='' and username!=null">
+                and username like concat("%",#{username},"%")
+            </if>
+        </where>
+    </select>
+
+    <!-- 通过id查询用户-->
+    <select id="getUserById"  resultType="User">
+        select
+         <include refid="user"/>
+        from user
+        where id=#{id}
+    </select>
+
+    <!--添加用户-->
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id" parameterType="User">
+        insert into user(
+           username,
+           password,
+           sex,
+           bir,
+           tel,
+           addr,
+           createTime
+        )
+        values(
+            #{username},
+            #{password},
+            #{sex},
+            #{bir},
+            #{tel},
+            #{addr},
+            #{createTime}
+        )
+    </insert>
+
+    <!--编辑用户-->
+    <update id="updateUser" parameterType="User">
+        update user
+        set  sex = #{sex},
+             bir = #{bir},
+             tel = #{tel},
+             addr = #{addr},
+             createTime = #{createTime}
+        where id=#{id}
+    </update>
+
+    <!--删除用户-->
+    <delete id="deleteUser">
+        delete from user where id=#{id}
+    </delete>
+<!--
+    &lt;!&ndash; 通过备案医药机构id查询备案申请药店信息字段&ndash;&gt;
+    <select id="queryAppyFixphacInfoById" parameterType="String"
+            resultType="cn.hsa.sds.spdrugqua.record.dto.AppyFixphacInfoDTO">
+        select
+        <include refid="appyFixphacInfo"/>
+        from appy_fixphac_info
+        where VALI_FLAG!=0 and APPY_MEDINS_ID = #{appyMedinsId}
+    </select>
+
+    &lt;!&ndash;逻辑删除备案医药机构信息&ndash;&gt;
+    <update id="deleteAppyFixphacInfoByTrtDclaDetlSn">
+        update appy_fixphac_info
+        set VALI_FLAG='0',UPDT_FLAG=1,UPDT_TIME=#{date}
+        where TRT_DCLA_DETL_SN = #{trtDclaDetlSn}
+          and VALI_FLAG != 0;
+    </update>
+
+    &lt;!&ndash;逻辑删除备案医药机构信息(详情修改)&ndash;&gt;
+    <update id="deleteAppyFixphacInfoByappyMedinsId">
+        update appy_fixphac_info
+        set VALI_FLAG='0',UPDT_FLAG=1,UPDT_TIME=#{date}
+        where APPY_MEDINS_ID = #{appyMedinsId}
+          and VALI_FLAG != 0;
+    </update>
+
+    &lt;!&ndash;更新药店信息&ndash;&gt;
+    <update id="updateAppyFixphacInfo" parameterType="cn.hsa.sds.spdrugqua.record.dto.AppyFixphacInfoDTO">
+        update appy_fixphac_info
+        set FIXMEDINS_CODE = #{fixmedinsCode}, /** 定点医药机构编号 */
+            FIXMEDINS_NAME = #{fixmedinsName}, /** 定点医药机构名称 */
+            TEL            = #{tel}, /** 联系电话 */
+            ADDR           = #{addr}, /** 联系地址 */
+            VER            = #{ver}, /** 版本号 */
+            POOLAREA_NO    = #{poolareaNo}, /** 统筹区编号 */
+            UPDT_FLAG=1,
+            UPDT_TIME = #{updtTime}/** 数据更新时间-&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;重要记得*/
+        where APPY_MEDINS_ID = #{appyMedinsId}
+    </update>
+
+    &lt;!&ndash;新增药店信息&ndash;&gt;
+    <insert id="insertAppyFixphacInfo" parameterType="cn.hsa.sds.spdrugqua.record.dto.AppyFixphacInfoDTO">
+        insert into appy_fixphac_info
+        (<include refid="appyFixphacInfoDO"/>,UPDT_FLAG)
+        values (
+        #{appyMedinsId},/** 备案医药机构ID */
+        #{trtDclaDetlSn},/**待遇申报明细流水号 */
+        #{fixmedinsCode}, /** 定点医药机构编号 */
+        #{fixmedinsName}, /** 定点医药机构名称 */
+        #{tel}, /** 联系电话 */
+        #{addr}, /** 联系地址 */
+        #{ver}, /** 版本号 */
+        #{valiFlag}, /** 有效标志 */
+        #{rid}, /** 唯一记录号 */
+        #{updtTime},/** 更新时间 */
+        #{crterId},/** 创建人ID */
+        #{crterName}, /** 创建人姓名 */
+        #{crteTime},/** 创建时间 */
+        #{crteOptinsNo}, /** 创建机构编号 */
+        #{opterId}, /** 经办人ID */
+        #{ opterName}, /** 经办人姓名 */
+        #{optTime},/** 经办时间 */
+        #{optinsNo}, /** 经办机构编号 */
+        #{poolareaNo}, /** 统筹区编号 */
+        1
+        )
+    </insert>
+
+    &lt;!&ndash;批量插入 存在则不插入 使用ignore&ndash;&gt;
+    <insert id="addAppFixphaInfoList" parameterType="cn.hsa.sds.spdrugqua.record.dto.AppyFixphacInfoDTO"
+            databaseId="mysql">
+        insert ignore into appy_fixphac_info
+        (<include refid="appyFixphacInfoDO"/>)
+        values
+        <foreach collection="appFixphaInfoList" item="appFixphaInfo" separator=",">
+            (
+            #{appFixphaInfo.appyMedinsId},
+            #{appFixphaInfo.trtDclaDetlSn},
+            #{appFixphaInfo.fixmedinsCode},
+            #{appFixphaInfo.fixmedinsName},
+            #{appFixphaInfo.tel},
+            #{appFixphaInfo.addr},
+            #{appFixphaInfo.ver},
+            #{appFixphaInfo.valiFlag},
+            #{appFixphaInfo.rid},
+            #{appFixphaInfo.updtTime},
+            #{appFixphaInfo.crterId},
+            #{appFixphaInfo.crterName},
+            #{appFixphaInfo.crteTime},
+            #{appFixphaInfo.crteOptinsNo},
+            #{appFixphaInfo.opterId},
+            #{appFixphaInfo.opterName},
+            #{appFixphaInfo.optTime},
+            #{appFixphaInfo.optinsNo},
+            #{appFixphaInfo.poolareaNo}
+            )
+        </foreach>
+    </insert>
+
+    &lt;!&ndash; 通过流水号查出未上传的医药机构信息（包括逻辑删除） &ndash;&gt;
+    <select id="queryAppyFixphacInfoBySnForUpload" parameterType="String"
+            resultType="cn.hsa.sds.spdrugqua.record.dto.AppyFixphacInfoDTO">
+        select
+        <include refid="appyFixphacInfo"/>
+        from appy_fixphac_info
+        where TRT_DCLA_DETL_SN = #{trtDclaDetlSn} and UPDT_FLAG=1
+    </select>
+
+    &lt;!&ndash;根据医药机构id查出流水号&ndash;&gt;
+    <select id="getTrtDclaDetlSN" parameterType="String" resultType="String">
+        select
+        TRT_DCLA_DETL_SN
+        from appy_fixphac_info
+        where APPY_MEDINS_ID=#{appyMedinsId}
+    </select>
+
+    <update id="updateFlag" parameterType="String">
+        update appy_fixphac_info
+        set UPDT_FLAG=0
+        where TRT_DCLA_DETL_SN = #{trtDclaDetlSn}
+    </update>-->
+</mapper>
